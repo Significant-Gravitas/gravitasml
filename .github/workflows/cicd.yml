@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8]
+        python-version: [3.11, 3.12]
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python
@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8]
+        python-version: [3.11, 3.12]
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python
@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8]
+        python-version: [3.11, 3.12]
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python
@@ -78,7 +78,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8]
+        python-version: [3.11, 3.12]
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python
