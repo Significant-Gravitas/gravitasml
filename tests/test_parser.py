@@ -1,4 +1,6 @@
 import unittest
+
+from pydantic import BaseModel
 from gravitasml.token import tokenize
 from gravitasml.parser import Parser
 
@@ -12,6 +14,16 @@ class TestParser(unittest.TestCase):
         correct = {"tag": "content"}
         self.assertEqual(correct, object)
 
+    def test_convert_to_pydantic_model_single(self):
+        class MyModel(BaseModel):
+            tag: str
+
+        markup = "<tag>content</tag>"
+        tokens = tokenize(markup)
+        parser = Parser(tokens)
+        object = parser.parse_to_pydantic(MyModel)
+        self.assertEqual(object, MyModel(tag="content"))
+
     def test_double_duplicate_tag(self):
         markup = "<tag>content</tag><tag>content</tag>"
         tokens = tokenize(markup)
@@ -20,13 +32,15 @@ class TestParser(unittest.TestCase):
         correct = [{"tag": "content"}, {"tag": "content"}]
         self.assertEqual(correct, object)
 
-    def test_double_duplicate_tag_nested_duplicate(self):
-        markup = "<tag><1>a</1><1>a</1></tag><tag><1>a</1><1>a</1></tag>"
+    def test_convert_to_pydantic_model_list(self):
+        class MyModel(BaseModel):
+            tag: str
+
+        markup = "<tag>content</tag><tag>content</tag>"
         tokens = tokenize(markup)
         parser = Parser(tokens)
-        object = parser.parse()
-        correct = [{"tag": [{"1": "a"}, {"1": "a"}]}, {"tag": [{"1": "a"}, {"1": "a"}]}]
-        self.assertEqual(correct, object)
+        object = parser.parse_to_pydantic(MyModel)
+        self.assertEqual(object, [MyModel(tag="content"), MyModel(tag="content")])
 
     def test_nested_tags(self):
         markup = "<tag1><tag2>content</tag2></tag1>"
@@ -34,6 +48,27 @@ class TestParser(unittest.TestCase):
         parser = Parser(tokens)
         object = parser.parse()
         correct = {"tag1": {"tag2": "content"}}
+        self.assertEqual(correct, object)
+
+    def test_nested_tags_pydantic(self):
+        class Tag2(BaseModel):
+            tag2: str
+
+        class Tag1(BaseModel):
+            tag1: Tag2
+
+        markup = "<tag1><tag2>content</tag2></tag1>"
+        tokens = tokenize(markup)
+        parser = Parser(tokens)
+        object = parser.parse_to_pydantic(Tag1)
+        self.assertEqual(object, Tag1(tag1=Tag2(tag2="content")))
+
+    def test_double_duplicate_tag_nested_duplicate(self):
+        markup = "<tag><1>a</1><1>a</1></tag><tag><1>a</1><1>a</1></tag>"
+        tokens = tokenize(markup)
+        parser = Parser(tokens)
+        object = parser.parse()
+        correct = [{"tag": [{"1": "a"}, {"1": "a"}]}, {"tag": [{"1": "a"}, {"1": "a"}]}]
         self.assertEqual(correct, object)
 
     def test_tags_with_whitespace(self):
