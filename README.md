@@ -30,9 +30,9 @@ from gravitasml.parser import Parser
 markup = "<tag1><tag2>content</tag2></tag1>"
 tokens = tokenize(markup)
 parser = Parser(tokens)
-parser.parse()
+obj = parser.parse()
 
-print(parser.object)  # Output: [{'tag1': {'tag2': 'content'}}]
+print(obj)  # Output: {'tag1': {'tag2': 'content'}}
 ```
 
 ## Limitations
