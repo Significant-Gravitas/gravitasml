@@ -88,6 +88,9 @@ jobs:
     permissions:
       # IMPORTANT: this permission is mandatory for trusted publishing
       id-token: write
+      contents: read
+      deployments: write
+      statuses: read
     strategy:
       matrix:
         python-version: [3.12]
