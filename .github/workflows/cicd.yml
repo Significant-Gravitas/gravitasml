@@ -78,6 +78,10 @@ jobs:
     needs: test
     if: github.event_name == 'release' && github.event.action == 'published'
     runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      # IMPORTANT: this permission is mandatory for trusted publishing
+      id-token: write
     strategy:
       matrix:
         python-version: [3.12]
@@ -96,6 +100,5 @@ jobs:
       - name: Build
         run: |
           poetry build
-      - name: Build and publish
-        run: |
-          poetry publish --username ${{ secrets.PYPI_USERNAME }} --password ${{ secrets.PYPI_PASSWORD }}
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
