@@ -16,6 +16,8 @@ jobs:
         python-version: [3.11, 3.12]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -38,6 +40,8 @@ jobs:
         python-version: [3.11, 3.12]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -60,6 +64,8 @@ jobs:
         python-version: [3.11, 3.12]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -87,6 +93,8 @@ jobs:
         python-version: [3.12]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
