@@ -4,6 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["Nicholas Tindle <nicholas.tindle@agpt.co>"]
 readme = "README.md"
+homepage = "https://github.com/significant-gravitas/"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -15,14 +16,11 @@ classifiers = [
     "Typing :: Typed"
 ]
 
-[project.urls]
-"Homepage" = "https://github.com/significant-gravitas/"
-
 [tool.poetry.dependencies]
-python = "^3.11"
-pytest = "^7.4.3"
-pydantic = "^1 || ^2"
-black = "^23.11.0"
+python = ">=3.11,<3.13"
+pytest = "^8.2.1"
+pydantic = "^2.9.2"
+black = "^24.10.0"
 
 
 [build-system]
