@@ -52,8 +52,7 @@ jobs:
       - name: Lint with flake8
         run: |
           poetry run black . --check
-
-  test:
+test:
     needs: lint
     runs-on: ubuntu-latest
     strategy:
@@ -76,8 +75,7 @@ jobs:
       - name: Test with pytest
         run: |
           poetry run pytest -v -s ./tests
-
-  publish:
+publish:
     needs: test
     if: github.event_name == 'release' && github.event.action == 'published'
     runs-on: ubuntu-latest
