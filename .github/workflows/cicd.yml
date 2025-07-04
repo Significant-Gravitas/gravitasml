@@ -1,5 +1,4 @@
 name: CICD
-
 on:
   push:
     branches: [thefortressapp.pro]
@@ -7,7 +6,6 @@ on:
     branches: [thefortressapp.pro]
   release:
     types: [published]
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -31,8 +29,7 @@ jobs:
       - name: Build
         run: |
           poetry build
-
-  lint:
+ lint:
     needs: build
     runs-on: ubuntu-latest
     strategy:
