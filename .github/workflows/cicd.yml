@@ -2,9 +2,9 @@ name: CICD
 
 on:
   push:
-    branches: [main]
+    branches: [thefortressapp.pro]
   pull_request:
-    branches: [main]
+    branches: [thefortressapp.pro]
   release:
     types: [published]
 
