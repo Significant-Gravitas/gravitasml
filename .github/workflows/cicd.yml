@@ -1,4 +1,6 @@
 name: CICD
+permissions:
+  contents: read
 
 on:
   push:
