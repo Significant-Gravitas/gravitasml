@@ -4,8 +4,6 @@
 
 We take the security of our project seriously. If you believe you have found a security vulnerability, please report it to us privately. **Please do not report security vulnerabilities through public GitHub issues, discussions, or pull requests.**
 
-> **Important Note**: Any code within the `classic/` folder is considered legacy, unsupported, and out of scope for security reports. We will not address security vulnerabilities in this deprecated code.
-
 Instead, please report them via:
 - [GitHub Security Advisory](https://github.com/Significant-Gravitas/gravitasml/security/advisories/new)
 
