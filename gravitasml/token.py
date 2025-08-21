@@ -1,6 +1,27 @@
 import re
 
 
+def parse_tag_with_filters(tag_content: str) -> tuple[str, list[str]]:
+    """
+    Parse tag content to extract tag name and filters.
+    
+    Args:
+        tag_content (str): The content inside < > brackets
+        
+    Returns:
+        tuple[str, list[str]]: (tag_name, list_of_filters)
+    """
+    if "|" in tag_content:
+        parts = tag_content.split("|", 1)
+        tag_name = parts[0].strip()
+        filters_part = parts[1].strip()
+        # Parse multiple filters separated by |
+        filters = [f.strip() for f in filters_part.split("|") if f.strip()]
+        return tag_name, filters
+    else:
+        return tag_content.strip(), []
+
+
 class Token:
     """
     A class representing a token in a programming language.
@@ -10,13 +31,15 @@ class Token:
         value (Any): The value of the token.
         line_num (int): The line number where the token appears in the source code.
         column (int): The column number where the token appears in the source code.
+        filters (list[str]): List of filters applied to the token (for TAG_OPEN tokens).
     """
 
-    def __init__(self, token_type, value, line_num, column: int):
+    def __init__(self, token_type, value, line_num, column: int, filters: list[str] = None):
         self.type = token_type
         self.value = value
         self.line_num = line_num
         self.column = column
+        self.filters = filters or []
 
     def __repr__(self):
         return (
@@ -33,6 +56,7 @@ class Token:
                 and self.value == other.value
                 and self.line_num == other.line_num
                 and self.column == other.column
+                and self.filters == other.filters
             )
         return False
 
@@ -64,6 +88,8 @@ def tokenize(markup: str) -> list[Token]:
     ):  # re.DOTALL to allow '.' to match newline
         kind = mo.lastgroup
         value = mo.group()
+        filters = []  # Initialize filters for each token
+        
         if kind == "COMMENT":
             # Comments are ignored, no need to add them to the token list
             continue
@@ -78,6 +104,8 @@ def tokenize(markup: str) -> list[Token]:
             # Drop the </> from the outside, raise if not there
             if kind == "TAG_OPEN" and value[0] == "<" and value[-1] == ">":
                 value = value[1:-1]
+                # Parse filters for TAG_OPEN
+                value, filters = parse_tag_with_filters(value)
             elif (
                 kind == "TAG_CLOSE"
                 and value[0] == "<"
@@ -103,7 +131,11 @@ def tokenize(markup: str) -> list[Token]:
 
         # dont populate empty tokens (like new lines)
         if value:
-            tokens.append(Token(kind, value, line_num, column))
+            # Pass filters only for TAG_OPEN tokens
+            if kind == "TAG_OPEN" and filters:
+                tokens.append(Token(kind, value, line_num, column, filters))
+            else:
+                tokens.append(Token(kind, value, line_num, column))
         continue
 
     return tokens
