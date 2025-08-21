@@ -6,11 +6,11 @@ Always reference these instructions first and fallback to search or bash command
 ## Working Effectively
 
 ### Bootstrap, Build, and Test the Repository:
-- Install dependencies: `poetry install` -- takes 30 seconds first time, nearly instant afterwards
-- Build: `poetry build` -- takes 0.5 seconds. NEVER CANCEL. Set timeout to 60+ seconds for safety
-- Lint: `poetry run black . --check` -- takes 0.7 seconds
-- Test with pytest: `poetry run pytest -v -s ./tests` -- takes 1 second. NEVER CANCEL. Set timeout to 60+ seconds for safety  
-- Test with unittest: `poetry run python -m unittest discover -v` -- takes 0.5 seconds. Alternative to pytest
+- Install dependencies: `poetry install` -- NEVER CANCEL. Set timeout to 60+ seconds for safety
+- Build: `poetry build` -- NEVER CANCEL. Set timeout to 60+ seconds for safety
+- Lint: `poetry run black . --check` -- quick execution
+- Test with pytest: `poetry run pytest -v -s ./tests` -- NEVER CANCEL. Set timeout to 60+ seconds for safety  
+- Test with unittest: `poetry run python -m unittest discover -v` -- Alternative to pytest
 
 ### Requirements:
 - Python 3.10+ (tested in CI with 3.10, 3.11, 3.12)
@@ -68,7 +68,7 @@ print('Repeated tags result:', result)
 
 ### ALWAYS run these validation steps before committing:
 - `poetry run black . --check` -- CI will fail if code is not Black-formatted
-- `poetry run pytest -v -s ./tests` -- to ensure all tests pass (38 should pass, 5 expected failures are normal)
+- `poetry run pytest -v -s ./tests` -- to ensure all tests pass (most should pass, some expected failures are normal)
 
 ## Architecture
 
@@ -131,18 +131,18 @@ print('Repeated tags result:', result)
 - Runs: `poetry install`, `poetry build`, `poetry run black . --check`, `poetry run pytest -v -s ./tests`
 
 ### Testing Notes:
-- 43 total tests in test suite
-- 38 tests should pass, 5 are expected failures (@unittest.expectedFailure)
+- Test suite includes comprehensive coverage
+- Most tests should pass, some are expected failures (@unittest.expectedFailure)
 - Both pytest and unittest work (use poetry run for either)
 - Tests cover tokenization, parsing, Pydantic integration, error handling
 
-### Build Times (Actual Measured):
-- **NEVER CANCEL**: Build commands are very fast but set timeouts to 60+ seconds for safety
-- `poetry install`: ~30 seconds (first time), near instant afterwards
-- `poetry build`: ~0.5 seconds
-- `poetry run black . --check`: ~0.7 seconds  
-- `poetry run pytest -v -s ./tests`: ~1 second
-- `poetry run python -m unittest discover -v`: ~0.5 seconds
+### Build Times:
+- **NEVER CANCEL**: Build commands are fast but set timeouts to 60+ seconds for safety
+- `poetry install`: May take longer on first run, nearly instant afterwards
+- `poetry build`: Quick execution
+- `poetry run black . --check`: Quick execution  
+- `poetry run pytest -v -s ./tests`: Quick execution
+- `poetry run python -m unittest discover -v`: Quick execution
 
 ### Important Notes:
 - This is a pure Python library with no web UI, no server components, no external services
