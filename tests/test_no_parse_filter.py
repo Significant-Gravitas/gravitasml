@@ -141,7 +141,7 @@ class TestNoParseFilter(unittest.TestCase):
         markup = '<tag | no_parse>some content'
         with self.assertRaises(SyntaxError) as context:
             parse_markup(markup)
-        self.assertIn("Unclosed tag", str(context.exception))
+        self.assertIn("Unclosed", str(context.exception))
     
     def test_unmatched_opening_tag_without_filter(self):
         """Test that unmatched opening tags raise an error (baseline behavior)"""
@@ -157,7 +157,7 @@ class TestNoParseFilter(unittest.TestCase):
             parse_markup(markup)
         # With no_parse filter, mismatched tags are detected as unclosed tags
         # because the no_parse logic looks for the specific matching tag
-        self.assertIn("Unclosed tag", str(context.exception))
+        self.assertIn("Unclosed", str(context.exception))
     
     def test_unmatched_closing_tag(self):
         """Test that unmatched closing tags raise an error"""
@@ -166,6 +166,101 @@ class TestNoParseFilter(unittest.TestCase):
             parse_markup(markup)
         # Should raise an error about unmatched closing tag
         self.assertIn("Unmatched closing tag", str(context.exception))
+
+    # Additional test cases from PR #11 implementation
+    def test_no_parse_with_multiple_filters(self):
+        markup = "<tag | no_parse other_filter><content>test</content></tag>"
+        tokens = tokenize(markup)
+        parser = Parser(tokens)
+        object = parser.parse()
+        correct = {"tag": "<content>test</content>"}
+        self.assertEqual(correct, object)
+
+    def test_no_parse_deeply_nested(self):
+        markup = "<outer | no_parse><level1><level2><level3>deep content</level3></level2></level1></outer>"
+        tokens = tokenize(markup)
+        parser = Parser(tokens)
+        object = parser.parse()
+        correct = {"outer": "<level1><level2><level3>deep content</level3></level2></level1>"}
+        self.assertEqual(correct, object)
+
+    def test_no_parse_with_special_characters(self):
+        markup = '<code | no_parse>function test() { return "hello & goodbye"; }</code>'
+        tokens = tokenize(markup)
+        parser = Parser(tokens)
+        object = parser.parse()
+        correct = {"code": 'function test() { return "hello & goodbye"; }'}
+        self.assertEqual(correct, object)
+
+    def test_no_parse_with_mixed_quotes(self):
+        markup = """<script | no_parse>var x = 'single'; var y = "double";</script>"""
+        tokens = tokenize(markup)
+        parser = Parser(tokens)
+        object = parser.parse()
+        correct = {"script": """var x = 'single'; var y = "double";"""}
+        self.assertEqual(correct, object)
+
+    def test_no_parse_with_numbers_and_symbols(self):
+        markup = "<data | no_parse>123 + 456 = 579 @#$%^&*()</data>"
+        tokens = tokenize(markup)
+        parser = Parser(tokens)
+        object = parser.parse()
+        correct = {"data": "123 + 456 = 579 @#$%^&*()"}
+        self.assertEqual(correct, object)
+
+    def test_no_parse_with_newlines_and_tabs(self):
+        markup = "<format | no_parse>\n\tindented content\n\t\twith tabs\n</format>"
+        tokens = tokenize(markup)
+        parser = Parser(tokens)
+        object = parser.parse()
+        correct = {"format": "indented content\n\t\twith tabs"}
+        self.assertEqual(correct, object)
+
+    def test_no_parse_multiple_nested_same_name(self):
+        markup = "<container | no_parse><container>inner1</container><container>inner2</container></container>"
+        tokens = tokenize(markup)
+        parser = Parser(tokens)
+        object = parser.parse()
+        correct = {"container": "<container>inner1</container><container>inner2</container>"}
+        self.assertEqual(correct, object)
+
+    def test_no_parse_unicode_content(self):
+        markup = "<unicode | no_parse><p>Hello 世界! 🌍</p><span>émojis: 🚀✨</span></unicode>"
+        tokens = tokenize(markup)
+        parser = Parser(tokens)
+        object = parser.parse()
+        correct = {"unicode": "<p>Hello 世界! 🌍</p><span>émojis: 🚀✨</span>"}
+        self.assertEqual(correct, object)
+
+    def test_no_parse_xml_declaration_like(self):
+        markup = '<doc | no_parse><?xml version="1.0"?><root>content</root></doc>'
+        tokens = tokenize(markup)
+        parser = Parser(tokens)
+        object = parser.parse()
+        correct = {"doc": '<?xml version="1.0"?><root>content</root>'}
+        self.assertEqual(correct, object)
+
+    def test_parse_markup_convenience_function(self):
+        # Test that parse_markup preserves exact whitespace
+        markup = '<tag | no_parse>  <inner>  content  </inner>  </tag>'
+        result = parse_markup(markup)
+        correct = {"tag": "  <inner>  content  </inner>  "}
+        self.assertEqual(correct, result)
+
+    def test_exact_whitespace_preservation(self):        
+        markup = """<template | no_parse>
+    <div class="container">
+        <p>Indented content</p>
+    </div>
+</template>"""
+        result = parse_markup(markup)
+        expected_content = """
+    <div class="container">
+        <p>Indented content</p>
+    </div>
+"""
+        correct = {"template": expected_content}
+        self.assertEqual(correct, result)
 
 
 if __name__ == "__main__":

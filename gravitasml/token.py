@@ -15,8 +15,8 @@ def parse_tag_with_filters(tag_content: str) -> tuple[str, list[str]]:
         parts = tag_content.split("|", 1)
         tag_name = parts[0].strip()
         filters_part = parts[1].strip()
-        # Parse multiple filters separated by |
-        filters = [f.strip() for f in filters_part.split("|") if f.strip()]
+        # Parse multiple filters separated by spaces
+        filters = [f.strip() for f in filters_part.split() if f.strip()]
         return tag_name, filters
     else:
         return tag_content.strip(), []
