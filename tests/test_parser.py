@@ -590,6 +590,32 @@ class TestParser(unittest.TestCase):
         correct = {"doc": '<?xml version="1.0"?><root>content</root>'}
         self.assertEqual(correct, object)
 
+    def test_parse_markup_convenience_function(self):
+        from gravitasml.parser import parse_markup
+        
+        # Test that parse_markup preserves exact whitespace
+        markup = '<tag | no_parse>  <inner>  content  </inner>  </tag>'
+        result = parse_markup(markup)
+        correct = {"tag": "  <inner>  content  </inner>  "}
+        self.assertEqual(correct, result)
+
+    def test_exact_whitespace_preservation(self):
+        from gravitasml.parser import parse_markup
+        
+        markup = """<template | no_parse>
+    <div class="container">
+        <p>Indented content</p>
+    </div>
+</template>"""
+        result = parse_markup(markup)
+        expected_content = """
+    <div class="container">
+        <p>Indented content</p>
+    </div>
+"""
+        correct = {"template": expected_content}
+        self.assertEqual(correct, result)
+
 
 if __name__ == "__main__":
     unittest.main()

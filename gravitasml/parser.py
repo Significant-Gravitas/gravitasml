@@ -1,6 +1,21 @@
 from typing import Any, Type, Union
-from gravitasml.token import Token
+from gravitasml.token import Token, tokenize
 from pydantic import BaseModel, ValidationError
+
+
+def parse_markup(markup: str) -> dict[str, Any] | list:
+    """
+    Convenience function to parse markup with full no_parse filter support.
+    
+    Args:
+        markup (str): The markup string to parse
+        
+    Returns:
+        dict[str, Any] | list: The parsed data
+    """
+    tokens = tokenize(markup)
+    parser = Parser(tokens, markup)
+    return parser.parse()
 
 
 class Node:
@@ -107,11 +122,12 @@ class Parser:
         parse_to_pydantic(model: Type[BaseModel]) -> BaseModel | list[BaseModel]: Parses the tokens and returns a Pydantic model instance or a list of instances.
     """
 
-    def __init__(self, tokens: list[Token]):
+    def __init__(self, tokens: list[Token], original_markup: str = ""):
         self.root = List()
         self.current = self.root
         self.tokens = tokens
         self.stack = []
+        self.original_markup = original_markup
 
     def parse(self) -> dict[str, Any] | list:
         """
@@ -177,44 +193,74 @@ class Parser:
         child = Node(tag_name)
         self.current.add(child)
         
-        # We need to reconstruct the original markup from the token positions
-        # Find the original markup for this section
+        # Find matching close tag and track depth for nested same-name tags
         i = start_index + 1
         depth = 1
-        start_pos = None
-        end_pos = None
         
-        # Find the positions in original markup
         while i < len(self.tokens) and depth > 0:
             token = self.tokens[i]
-            
-            if start_pos is None:
-                start_pos = token.column
             
             if token.type == "TAG_OPEN" and token.value == tag_name:
                 depth += 1
             elif token.type == "TAG_CLOSE" and token.value == tag_name:
                 depth -= 1
                 if depth == 0:
-                    # This is our closing tag - find where it ends
-                    end_pos = token.column
+                    # Found our matching closing tag
+                    break
             
             i += 1
         
         if depth > 0:
             raise SyntaxError(f"Unclosed no_parse tag: {tag_name}")
         
-        # For now, let's reconstruct from tokens but preserve original format
+        # Extract raw content using original markup if available
+        if self.original_markup:
+            raw_content = self._extract_raw_content_from_markup(start_index, i)
+        else:
+            # Fallback: reconstruct from tokens (less accurate whitespace)
+            raw_content = self._reconstruct_content_from_tokens(start_index, i, tag_name)
+        
+        # Set the raw content as the node's value
+        child.value = raw_content
+        
+        # Return the index of the closing tag
+        return i
+    
+    def _extract_raw_content_from_markup(self, open_index: int, close_index: int) -> str:
+        """Extract exact content from original markup using token positions."""
+        import re
+        
+        open_token = self.tokens[open_index]
+        close_token = self.tokens[close_index]
+        
+        # Find the end of the opening tag in original markup
+        start_search = open_token.column
+        remaining_markup = self.original_markup[start_search:]
+        match = re.search(r'>', remaining_markup)
+        if match:
+            content_start = start_search + match.end()
+        else:
+            content_start = start_search
+        
+        # Find the start of the closing tag
+        content_end = close_token.column
+        
+        # Extract exact content preserving whitespace
+        if content_start < content_end:
+            return self.original_markup[content_start:content_end]
+        else:
+            return ""
+    
+    def _reconstruct_content_from_tokens(self, start_index: int, end_index: int, tag_name: str) -> str:
+        """Fallback: reconstruct content from tokens (less accurate for whitespace)."""
         raw_content = ""
-        i = start_index + 1
         depth = 1
         
-        while i < len(self.tokens) and depth > 0:
+        for i in range(start_index + 1, end_index):
             token = self.tokens[i]
             
             if token.type == "TAG_OPEN" and token.value == tag_name:
                 depth += 1
-                # Reconstruct original tag format
                 original_tag = self._reconstruct_original_tag(token)
                 raw_content += original_tag
             elif token.type == "TAG_CLOSE" and token.value == tag_name:
@@ -224,19 +270,12 @@ class Parser:
             elif token.type == "TEXT":
                 raw_content += token.value
             elif token.type == "TAG_OPEN":
-                # Reconstruct original tag format
                 original_tag = self._reconstruct_original_tag(token)
                 raw_content += original_tag
             elif token.type == "TAG_CLOSE":
                 raw_content += f"</{token.value}>"
-            
-            i += 1
         
-        # Set the raw content as the node's value
-        child.value = raw_content
-        
-        # Return the index of the closing tag
-        return i - 1
+        return raw_content
     
     def _reconstruct_original_tag(self, token: Token) -> str:
         """Reconstruct original tag format from processed token."""
