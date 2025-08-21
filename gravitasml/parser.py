@@ -62,6 +62,14 @@ class List:
         self.children.append(child)
         child.parent = self
 
+    def add_text(self, text):
+        """Handle text at the root level by creating a text node."""
+        if text.strip():  # Only add non-empty text
+            # Create a text node to hold the content
+            text_node = Node("text")
+            text_node.value = text
+            self.add(text_node)
+
     def to_dict(self):
         """
         Converts the list and its children to a dictionary.
