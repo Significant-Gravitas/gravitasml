@@ -1,6 +1,27 @@
 import re
 
 
+def parse_tag_with_filters(tag_content: str) -> tuple[str, list[str]]:
+    """
+    Parse tag content to extract tag name and filters.
+    
+    Args:
+        tag_content (str): The content inside < > brackets
+        
+    Returns:
+        tuple[str, list[str]]: (tag_name, list_of_filters)
+    """
+    if "|" in tag_content:
+        parts = tag_content.split("|", 1)
+        tag_name = parts[0].strip()
+        filters_part = parts[1].strip()
+        # Parse multiple filters separated by spaces
+        filters = [f.strip() for f in filters_part.split() if f.strip()]
+        return tag_name, filters
+    else:
+        return tag_content.strip(), []
+
+
 class Token:
     """
     A class representing a token in a programming language.
@@ -86,13 +107,8 @@ def tokenize(markup: str) -> list[Token]:
             # Drop the </> from the outside, raise if not there
             if kind == "TAG_OPEN" and value[0] == "<" and value[-1] == ">":
                 value = value[1:-1]
-                # Check for filters in TAG_OPEN
-                if "|" in value:
-                    parts = value.split("|", 1)
-                    value = parts[0].strip()
-                    filter_part = parts[1].strip()
-                    # Parse filters (for now, just split by spaces for multiple filters)
-                    filters = [f.strip() for f in filter_part.split() if f.strip()]
+                # Parse filters for TAG_OPEN using helper function
+                value, filters = parse_tag_with_filters(value)
             elif (
                 kind == "TAG_CLOSE"
                 and value[0] == "<"

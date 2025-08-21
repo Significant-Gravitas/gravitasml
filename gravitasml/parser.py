@@ -3,6 +3,16 @@ from gravitasml.token import Token, tokenize
 from pydantic import BaseModel, ValidationError
 
 
+class GravitasMLError(Exception):
+    """Base exception for GravitasML parsing errors."""
+    pass
+
+
+class NoParseError(GravitasMLError):
+    """Exception raised for no_parse filter related errors."""
+    pass
+
+
 def parse_markup(markup: str) -> dict[str, Any] | list:
     """
     Convenience function to parse markup with full no_parse filter support.
@@ -211,7 +221,7 @@ class Parser:
             i += 1
         
         if depth > 0:
-            raise SyntaxError(f"Unclosed no_parse tag: {tag_name}")
+            raise NoParseError(f"Unclosed no_parse tag: {tag_name}")
         
         # Extract raw content using original markup if available
         if self.original_markup:
