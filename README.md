@@ -62,6 +62,7 @@ GravitasML transforms custom markup into Python data structures:
 - **Pydantic Integration** - Convert parsed data directly to Pydantic models for validation
 - **Nested Structure Support** - Handles nested tags, multiple roots, and repeated elements
 - **Tag Normalization** - Automatic whitespace handling and case conversion
+- **Filter Support** - Use `| no_parse` filter to preserve raw content without parsing
 - **Error Detection** - Syntax error detection for unmatched or improperly nested tags
 
 ## 📦 Installation
@@ -194,6 +195,54 @@ tokens = tokenize(markup)
 result = Parser(tokens).parse()
 # Result: {'user_profile': {'first_name': 'Alice'}}
 ```
+
+### No-Parse Filter
+
+Use the `| no_parse` filter to prevent recursive parsing of content, keeping it as a raw string:
+
+```python
+from gravitasml.token import tokenize
+from gravitasml.parser import Parser, parse_markup
+
+# Content inside no_parse tags is preserved as raw string
+markup = '<html | no_parse><div class="example"><p>Hello <strong>world</strong></p></div></html>'
+tokens = tokenize(markup)
+result = Parser(tokens).parse()
+# Result: {'html': '<div class="example"><p>Hello<strong>world</strong></p></div>'}
+
+# Use the convenience function for automatic whitespace preservation
+result = parse_markup('<tag | no_parse>  <inner>  content  </inner>  </tag>')
+# Result: {'tag': '  <inner>  content  </inner>  '}
+
+# Mix parsed and no_parse content
+mixed_markup = """
+<document>
+    <title>My Document</title>
+    <raw_html | no_parse>
+        <div class="content">
+            <p>This HTML is preserved exactly as written</p>
+            <script>alert('Even scripts!')</script>
+        </div>
+    </raw_html>
+    <processed>This content is parsed normally</processed>
+</document>
+"""
+
+result = parse_markup(mixed_markup)
+# Result: {
+#     'document': {
+#         'title': 'My Document',
+#         'raw_html': '<div class="content"><p>This HTML is preserved exactly as written</p><script>alert(\'Even scripts!\')</script></div>',
+#         'processed': 'This content is parsed normally'
+#     }
+# }
+```
+
+**Use Cases for No-Parse Filter:**
+- Preserving HTML/XML content without further processing
+- Storing template code or markup as literal strings
+- Preventing unwanted parsing of complex nested structures
+- Including code samples or examples in your markup
 
 ## 🏗️ Architecture
 
