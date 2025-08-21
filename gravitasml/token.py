@@ -10,13 +10,15 @@ class Token:
         value (Any): The value of the token.
         line_num (int): The line number where the token appears in the source code.
         column (int): The column number where the token appears in the source code.
+        filters (list): A list of filters applied to the token (for TAG_OPEN tokens).
     """
 
-    def __init__(self, token_type, value, line_num, column: int):
+    def __init__(self, token_type, value, line_num, column: int, filters=None):
         self.type = token_type
         self.value = value
         self.line_num = line_num
         self.column = column
+        self.filters = filters or []
 
     def __repr__(self):
         return (
@@ -33,6 +35,7 @@ class Token:
                 and self.value == other.value
                 and self.line_num == other.line_num
                 and self.column == other.column
+                and self.filters == other.filters
             )
         return False
 
@@ -40,12 +43,16 @@ class Token:
 def tokenize(markup: str) -> list[Token]:
     """
     Tokenizes the given markup string into a list of tokens.
+    
+    Supports filter syntax in TAG_OPEN tokens using pipe notation (e.g., <tag | no_parse>).
+    Filters are extracted and stored in the Token's filters attribute.
 
     Args:
         markup (str): The markup string to tokenize.
 
     Returns:
         list[Token]: A list of Token objects representing the tokens in the markup string.
+                    TAG_OPEN tokens may include filters in their filters attribute.
     """
     line_num = 1
     line_start = 0
@@ -75,9 +82,17 @@ def tokenize(markup: str) -> list[Token]:
             value = value.strip()
         # Cleanup the OPEN and CLOSE
         elif kind == "TAG_OPEN" or kind == "TAG_CLOSE":
+            filters = []
             # Drop the </> from the outside, raise if not there
             if kind == "TAG_OPEN" and value[0] == "<" and value[-1] == ">":
                 value = value[1:-1]
+                # Check for filters in TAG_OPEN
+                if "|" in value:
+                    parts = value.split("|", 1)
+                    value = parts[0].strip()
+                    filter_part = parts[1].strip()
+                    # Parse filters (for now, just split by spaces for multiple filters)
+                    filters = [f.strip() for f in filter_part.split() if f.strip()]
             elif (
                 kind == "TAG_CLOSE"
                 and value[0] == "<"
@@ -103,7 +118,10 @@ def tokenize(markup: str) -> list[Token]:
 
         # dont populate empty tokens (like new lines)
         if value:
-            tokens.append(Token(kind, value, line_num, column))
+            if kind == "TAG_OPEN":
+                tokens.append(Token(kind, value, line_num, column, filters))
+            else:
+                tokens.append(Token(kind, value, line_num, column))
         continue
 
     return tokens

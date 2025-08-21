@@ -87,7 +87,7 @@ class List:
 
 class Parser:
     """
-    A parser for HTML-like markup language.
+    A parser for HTML-like markup language with filter support.
 
     Args:
         tokens (list[Token]): A list of tokens to be parsed.
@@ -97,6 +97,10 @@ class Parser:
         current (Node): The current node being parsed.
         tokens (list[Token]): The list of tokens to be parsed.
         stack (list[str]): A stack to keep track of open tags.
+
+    Supported Filters:
+        no_parse: Prevents recursive parsing of content, preserving it as raw string.
+                 Usage: <tag | no_parse>content</tag>
 
     Methods:
         parse() -> dict[str, Any] | list: Parses the tokens and returns a dictionary or list.
@@ -112,22 +116,34 @@ class Parser:
     def parse(self) -> dict[str, Any] | list:
         """
         Parses the tokens and returns a dictionary or list.
+        
+        Handles filter processing for TAG_OPEN tokens. Currently supports:
+        - no_parse filter: Preserves content as raw string without recursive parsing
 
         Returns:
             dict[str, Any] | list: The parsed data.
         """
-        for t in self.tokens:
+        i = 0
+        while i < len(self.tokens):
+            t = self.tokens[i]
+            
             if t.type == "TEXT":
                 if isinstance(self.current, List):
                     self.current.add_text(t.value)  # type: ignore
                 elif isinstance(self.current, Node):
                     self.current.value += t.value  # type: Node
+                    
             elif t.type == "TAG_OPEN":
-                self.stack.append(t.value)
-
-                child = Node(t.value)
-                self.current.add(child)
-                self.current = child
+                # Check if this tag has a no_parse filter
+                if "no_parse" in t.filters:
+                    # Handle no_parse tag: collect all content until matching close tag
+                    i = self._handle_no_parse_tag(i)
+                else:
+                    # Normal tag processing
+                    self.stack.append(t.value)
+                    child = Node(t.value)
+                    self.current.add(child)
+                    self.current = child
 
             elif t.type == "TAG_CLOSE":
                 expected = self.stack.pop()
@@ -137,10 +153,98 @@ class Parser:
                     self.current = self.current.parent  # type: ignore
                 else:
                     raise Exception("Unmatched closing tag")
+            
+            i += 1
 
         if self.stack:
             raise SyntaxError("Unclosed tag")
         return self.root.to_dict()
+
+    def _handle_no_parse_tag(self, start_index: int) -> int:
+        """
+        Handle a tag with no_parse filter by collecting all content until matching close tag.
+        
+        Args:
+            start_index: Index of the opening tag token
+            
+        Returns:
+            Index of the closing tag token
+        """
+        open_token = self.tokens[start_index]
+        tag_name = open_token.value
+        
+        # Create the node
+        child = Node(tag_name)
+        self.current.add(child)
+        
+        # We need to reconstruct the original markup from the token positions
+        # Find the original markup for this section
+        i = start_index + 1
+        depth = 1
+        start_pos = None
+        end_pos = None
+        
+        # Find the positions in original markup
+        while i < len(self.tokens) and depth > 0:
+            token = self.tokens[i]
+            
+            if start_pos is None:
+                start_pos = token.column
+            
+            if token.type == "TAG_OPEN" and token.value == tag_name:
+                depth += 1
+            elif token.type == "TAG_CLOSE" and token.value == tag_name:
+                depth -= 1
+                if depth == 0:
+                    # This is our closing tag - find where it ends
+                    end_pos = token.column
+            
+            i += 1
+        
+        if depth > 0:
+            raise SyntaxError(f"Unclosed no_parse tag: {tag_name}")
+        
+        # For now, let's reconstruct from tokens but preserve original format
+        raw_content = ""
+        i = start_index + 1
+        depth = 1
+        
+        while i < len(self.tokens) and depth > 0:
+            token = self.tokens[i]
+            
+            if token.type == "TAG_OPEN" and token.value == tag_name:
+                depth += 1
+                # Reconstruct original tag format
+                original_tag = self._reconstruct_original_tag(token)
+                raw_content += original_tag
+            elif token.type == "TAG_CLOSE" and token.value == tag_name:
+                depth -= 1
+                if depth > 0:
+                    raw_content += f"</{token.value}>"
+            elif token.type == "TEXT":
+                raw_content += token.value
+            elif token.type == "TAG_OPEN":
+                # Reconstruct original tag format
+                original_tag = self._reconstruct_original_tag(token)
+                raw_content += original_tag
+            elif token.type == "TAG_CLOSE":
+                raw_content += f"</{token.value}>"
+            
+            i += 1
+        
+        # Set the raw content as the node's value
+        child.value = raw_content
+        
+        # Return the index of the closing tag
+        return i - 1
+    
+    def _reconstruct_original_tag(self, token: Token) -> str:
+        """Reconstruct original tag format from processed token."""
+        # Convert back from processed format
+        tag_value = token.value
+        # Convert underscores back to spaces
+        tag_value = tag_value.replace("_", " ")
+        return f"<{tag_value}>"
 
     def parse_to_pydantic(self, model: Type[BaseModel]) -> BaseModel | list[BaseModel]:
         """
