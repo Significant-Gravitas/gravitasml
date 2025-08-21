@@ -21,6 +21,7 @@ python = ">=3.10,<4.0"
 pytest = "^8.2.1"
 pydantic = "^2.9.2"
 black = "^24.10.0"
+hypothesis = "^6.100.0"
 
 
 [build-system]
