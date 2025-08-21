@@ -4,10 +4,10 @@ import re
 def parse_tag_with_filters(tag_content: str) -> tuple[str, list[str]]:
     """
     Parse tag content to extract tag name and filters.
-    
+
     Args:
         tag_content (str): The content inside < > brackets
-        
+
     Returns:
         tuple[str, list[str]]: (tag_name, list_of_filters)
     """
@@ -34,7 +34,9 @@ class Token:
         filters (list[str]): List of filters applied to the token (for TAG_OPEN tokens).
     """
 
-    def __init__(self, token_type, value, line_num, column: int, filters: list[str] = None):
+    def __init__(
+        self, token_type, value, line_num, column: int, filters: list[str] = None
+    ):
         self.type = token_type
         self.value = value
         self.line_num = line_num
@@ -89,7 +91,7 @@ def tokenize(markup: str) -> list[Token]:
         kind = mo.lastgroup
         value = mo.group()
         filters = []  # Initialize filters for each token
-        
+
         if kind == "COMMENT":
             # Comments are ignored, no need to add them to the token list
             continue
