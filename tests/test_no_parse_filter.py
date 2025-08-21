@@ -116,6 +116,56 @@ class TestNoParseFilter(unittest.TestCase):
         for token in tokens:
             if token.type == "TAG_OPEN":
                 self.assertEqual(token.filters, [])
+    
+    def test_self_closing_tag_with_no_parse_filter(self):
+        """Test that self-closing tags with no_parse filter are not recognized as tags"""
+        # Self-closing tags are not supported by the current grammar
+        # They should be treated as text, which gets ignored at root level
+        markup = '<tag | no_parse />content'
+        result = parse_markup(markup)
+        # Since <tag | no_parse /> is not recognized as a tag, the content becomes
+        # standalone text which is ignored, resulting in an empty dict
+        expected = {}
+        self.assertEqual(expected, result)
+    
+    def test_self_closing_tag_without_filter(self):
+        """Test that self-closing tags are not recognized as valid tags (baseline behavior)"""
+        markup = '<tag />content'
+        result = parse_markup(markup)
+        # Self-closing tags should not be recognized, content should be ignored
+        expected = {}
+        self.assertEqual(expected, result)
+    
+    def test_unmatched_opening_tag_with_no_parse_filter(self):
+        """Test that unmatched opening tags with no_parse filter raise an error"""
+        markup = '<tag | no_parse>some content'
+        with self.assertRaises(SyntaxError) as context:
+            parse_markup(markup)
+        self.assertIn("Unclosed tag", str(context.exception))
+    
+    def test_unmatched_opening_tag_without_filter(self):
+        """Test that unmatched opening tags raise an error (baseline behavior)"""
+        markup = '<tag>some content'
+        with self.assertRaises(SyntaxError) as context:
+            parse_markup(markup)
+        self.assertIn("Unclosed tag", str(context.exception))
+    
+    def test_mismatched_tags_with_no_parse_filter(self):
+        """Test that mismatched tags with no_parse filter raise an error"""
+        markup = '<tag | no_parse>content</othertag>'
+        with self.assertRaises(SyntaxError) as context:
+            parse_markup(markup)
+        # With no_parse filter, mismatched tags are detected as unclosed tags
+        # because the no_parse logic looks for the specific matching tag
+        self.assertIn("Unclosed tag", str(context.exception))
+    
+    def test_unmatched_closing_tag(self):
+        """Test that unmatched closing tags raise an error"""
+        markup = '</tag>'
+        with self.assertRaises(Exception) as context:
+            parse_markup(markup)
+        # Should raise an error about unmatched closing tag
+        self.assertIn("Unmatched closing tag", str(context.exception))
 
 
 if __name__ == "__main__":

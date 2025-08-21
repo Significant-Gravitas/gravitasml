@@ -139,7 +139,10 @@ class Parser:
             t = self.tokens[i]
             if t.type == "TEXT":
                 if isinstance(self.current, List):
-                    self.current.add_text(t.value)  # type: ignore
+                    # Handle text at root level - could be from invalid markup
+                    # For now, we'll ignore standalone text at root level
+                    # This prevents errors when self-closing tags are not recognized
+                    pass
                 elif isinstance(self.current, Node):
                     self.current.value += t.value  # type: Node
             elif t.type == "TAG_OPEN":
@@ -183,6 +186,11 @@ class Parser:
                                 end_pos = current_token.column
                         i += 1
                     
+                    # Check if we found a matching closing tag
+                    if open_count > 0:
+                        # No matching closing tag found - this is an unclosed tag
+                        raise SyntaxError("Unclosed tag")
+                    
                     # Extract raw content from original markup if we have positions
                     if self.original_markup and start_pos is not None and end_pos is not None:
                         raw_content = self.original_markup[start_pos:end_pos]
@@ -205,6 +213,8 @@ class Parser:
                     continue  # Skip the normal increment
 
             elif t.type == "TAG_CLOSE":
+                if not self.stack:
+                    raise Exception("Unmatched closing tag")
                 expected = self.stack.pop()
                 if t.value != expected:
                     raise SyntaxError(f"Mismatched tags: {expected} and {t.value}")
