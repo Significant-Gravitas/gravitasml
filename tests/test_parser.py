@@ -87,6 +87,20 @@ class TestParser(unittest.TestCase):
         correct = {"tag1": "content1", "tag2": "content2"}
         self.assertEqual(correct, object)
 
+    def test_text_outside_root_raises_value_error(self):
+        markup = "<tag>content</tag> trailing"
+        tokens = tokenize(markup)
+        parser = Parser(tokens)
+        with self.assertRaisesRegex(ValueError, "Text outside of a tag"):
+            parser.parse()
+
+    def test_text_only_document_raises_value_error(self):
+        markup = "just dangling text"
+        tokens = tokenize(markup)
+        parser = Parser(tokens)
+        with self.assertRaisesRegex(ValueError, "Text outside of a tag"):
+            parser.parse()
+
     def test_repeated_tags_to_list(self):
         markup = "<tag><a>value</a><a>value</a></tag>"
         tokens = tokenize(markup)
