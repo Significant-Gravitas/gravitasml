@@ -62,6 +62,17 @@ class List:
         self.children.append(child)
         child.parent = self
 
+    def add_text(self, token: Token):
+        """
+        Handles raw text when the parser is not currently inside a node.
+        """
+        text = token.value
+        if not text or text.isspace():
+            return
+        raise ValueError(
+            f"Text outside of a tag is unsupported at line {token.line_num}, column {token.column}"
+        )
+
     def to_dict(self):
         """
         Converts the list and its children to a dictionary.
@@ -119,7 +130,7 @@ class Parser:
         for t in self.tokens:
             if t.type == "TEXT":
                 if isinstance(self.current, List):
-                    self.current.add_text(t.value)  # type: ignore
+                    self.current.add_text(t)
                 elif isinstance(self.current, Node):
                     self.current.value += t.value  # type: Node
             elif t.type == "TAG_OPEN":
