@@ -1,0 +1,13 @@
+homepage: "https://github.com/Significant-Gravitas/gravitasml"
+language: python
+primary_contact: "nicholas.tindle@agpt.co"
+auto_ccs:
+  - "security@agpt.co"
+fuzzing_engines:
+  - libfuzzer
+sanitizers:
+  - address
+  - undefined
+architectures:
+  - x86_64
+main_repo: "https://github.com/Significant-Gravitas/gravitasml"
