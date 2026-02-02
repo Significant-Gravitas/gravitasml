@@ -127,23 +127,20 @@ class TestNoParseFilter(unittest.TestCase):
                 self.assertEqual(token.filters, [])
 
     def test_self_closing_tag_with_no_parse_filter(self):
-        """Test that self-closing tags with no_parse filter are not recognized as tags"""
+        """Test that self-closing tags with no_parse filter raise ValueError (text outside tags)"""
         # Self-closing tags are not supported by the current grammar
-        # They should be treated as text, which gets ignored at root level
+        # They are treated as text, which now raises ValueError
         markup = "<tag | no_parse />content"
-        result = parse_markup(markup)
-        # Since <tag | no_parse /> is not recognized as a tag, the content becomes
-        # standalone text which is ignored, resulting in an empty dict
-        expected = {}
-        self.assertEqual(expected, result)
+        with self.assertRaises(ValueError) as context:
+            parse_markup(markup)
+        self.assertIn("Text outside of a tag is unsupported", str(context.exception))
 
     def test_self_closing_tag_without_filter(self):
-        """Test that self-closing tags are not recognized as valid tags (baseline behavior)"""
+        """Test that self-closing tags raise ValueError (text outside tags)"""
         markup = "<tag />content"
-        result = parse_markup(markup)
-        # Self-closing tags should not be recognized, content should be ignored
-        expected = {}
-        self.assertEqual(expected, result)
+        with self.assertRaises(ValueError) as context:
+            parse_markup(markup)
+        self.assertIn("Text outside of a tag is unsupported", str(context.exception))
 
     def test_unmatched_opening_tag_with_no_parse_filter(self):
         """Test that unmatched opening tags with no_parse filter raise an error"""
