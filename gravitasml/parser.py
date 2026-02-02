@@ -1,3 +1,4 @@
+import re
 from typing import Any, Type, Union
 from gravitasml.token import Token, tokenize
 from pydantic import BaseModel, ValidationError
@@ -253,8 +254,6 @@ class Parser:
         self, open_index: int, close_index: int
     ) -> str:
         """Extract exact content from original markup using token positions."""
-        import re
-
         open_token = self.tokens[open_index]
         close_token = self.tokens[close_index]
 
@@ -305,11 +304,14 @@ class Parser:
         return raw_content
 
     def _reconstruct_original_tag(self, token: Token) -> str:
-        """Reconstruct original tag format from processed token."""
-        # Convert back from processed format
-        tag_value = token.value
-        # Convert underscores back to spaces
-        tag_value = tag_value.replace("_", " ")
+        """Reconstruct original tag format from processed token.
+
+        Note: The tokenizer normalizes whitespace to underscores, so this
+        attempts to reverse that. This is lossy - original underscores
+        become spaces too. Use parse_markup() for exact preservation.
+        """
+        # Reverse the tokenizer's whitespace→underscore normalization
+        tag_value = token.value.replace("_", " ")
         return f"<{tag_value}>"
 
     def parse_to_pydantic(self, model: Type[BaseModel]) -> BaseModel | list[BaseModel]:

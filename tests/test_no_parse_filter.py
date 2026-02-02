@@ -220,6 +220,11 @@ class TestNoParseFilter(unittest.TestCase):
         self.assertEqual(correct, object)
 
     def test_no_parse_with_newlines_and_tabs(self):
+        """Test no_parse with newlines/tabs using token fallback (leading/trailing whitespace stripped).
+
+        Note: Uses Parser(tokens) without original_markup, so whitespace preservation
+        is best-effort via token reconstruction. Use parse_markup() for exact whitespace.
+        """
         markup = "<format | no_parse>\n\tindented content\n\t\twith tabs\n</format>"
         tokens = tokenize(markup)
         parser = Parser(tokens)
